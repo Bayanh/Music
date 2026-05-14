@@ -87,7 +87,8 @@
             <h3>Tải tệp lên</h3>
             <p style="color:var(--text-muted); font-size:14px;">Chọn Nhạc hoặc Video để lưu vào máy</p>
             <button onclick="document.getElementById('file-upload').click()" style="background:var(--primary); color:#fff; border:none; padding:12px 24px; border-radius:12px; font-weight:600; margin-top:15px;">Chọn tệp</button>
-            <input type="file" id="file-upload" accept="audio/*,video/*" style="display: none;">
+            <!-- ĐÃ SỬA DÒNG BÊN DƯỚI: Thêm các định dạng file âm thanh cụ thể vào thẻ accept -->
+            <input type="file" id="file-upload" accept="audio/*,video/*,.mp3,.m4a,.wav,.flac,.ogg,.aac,.wma,.amr,.opus,.mid,.midi" style="display: none;">
         </div>
     </div>
 
