@@ -26,8 +26,6 @@ jobs:
 
       - name: Sync Web Code
         run: npx cap sync ios
-        
-      # ĐÃ XÓA bước "Install CocoaPods Dependencies"
 
       - name: Build Xcode Project
         run: |
