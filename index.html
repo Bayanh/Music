@@ -87,7 +87,6 @@
             <h3>Tải tệp lên</h3>
             <p style="color:var(--text-muted); font-size:14px;">Chọn Nhạc hoặc Video để lưu vào máy</p>
             <button onclick="document.getElementById('file-upload').click()" style="background:var(--primary); color:#fff; border:none; padding:12px 24px; border-radius:12px; font-weight:600; margin-top:15px;">Chọn tệp</button>
-            <!-- ĐÃ SỬA DÒNG BÊN DƯỚI: Thêm các định dạng file âm thanh cụ thể vào thẻ accept -->
             <input type="file" id="file-upload" accept="audio/*,video/*,.mp3,.m4a,.wav,.flac,.ogg,.aac,.wma,.amr,.opus,.mid,.midi" style="display: none;">
         </div>
     </div>
@@ -107,7 +106,12 @@
                     <span class="time" id="t-total">0:00</span>
                 </div>
             </div>
-            <div style="font-size:30px; color:var(--primary);" onclick="togglePlay()" id="p-play">⏸️</div>
+            <!-- ĐÃ THÊM: Cụm nút bấm có thêm Phóng to và Đóng -->
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="font-size:22px; cursor:pointer;" onclick="toggleFullScreen()" id="p-full">🔲</div>
+                <div style="font-size:30px; color:var(--primary); cursor:pointer;" onclick="togglePlay()" id="p-play">⏸️</div>
+                <div style="font-size:22px; color:var(--text-muted); cursor:pointer;" onclick="closePlayer()">✖️</div>
+            </div>
         </div>
     </div>
 
@@ -202,6 +206,9 @@
             document.getElementById('main-player').style.display = 'block';
             document.getElementById('p-title').innerText = m.name;
             
+            // Ẩn nút phóng to nếu là tệp âm thanh
+            document.getElementById('p-full').style.display = m.type === 'video' ? 'block' : 'none';
+            
             const pArt = document.getElementById('p-art');
             if (m.cover) {
                 pArt.style.backgroundImage = `url('${URL.createObjectURL(m.cover)}')`;
@@ -218,6 +225,33 @@
         function togglePlay() {
             if (engine.paused) { engine.play(); document.getElementById('p-play').innerText = '⏸️'; }
             else { engine.pause(); document.getElementById('p-play').innerText = '▶️'; }
+        }
+
+        // Đóng trình phát
+        function closePlayer() {
+            engine.pause();
+            document.getElementById('main-player').style.display = 'none';
+        }
+
+        // Phóng to / Thoát toàn màn hình
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                if (engine.requestFullscreen) {
+                    engine.requestFullscreen();
+                } else if (engine.webkitRequestFullscreen) { /* Safari */
+                    engine.webkitRequestFullscreen();
+                } else if (engine.msRequestFullscreen) { /* IE11 */
+                    engine.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+            }
         }
 
         // Đổi ảnh bìa
