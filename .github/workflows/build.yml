@@ -49,5 +49,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: My-Signed-IPA
-          path: MyWebApp.ipa
+          name: 7-Signed-IPA
+          path: MusicB.ipa
