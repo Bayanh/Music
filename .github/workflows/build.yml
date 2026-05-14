@@ -14,13 +14,26 @@ jobs:
           node-version: 22
 
       - name: Install Dependencies
-        run: |
-          npm install
-          npx cap add ios
+        run: npm install
 
+      # 1. Bổ sung bước Build Web (Tùy thuộc vào framework bạn dùng: React/Vue/Ionic...)
+      - name: Build Web Assets
+        run: npm run build 
+
+      # 2. Thêm nền tảng iOS (Chỉ hoạt động nếu thư mục ios chưa được commit lên Git)
+      - name: Add iOS Platform
+        run: npx cap add ios
+
+      # 3. Đồng bộ code web sang thư mục native
       - name: Sync Web Code
         run: npx cap sync ios
         
+      # 4. BỔ SUNG QUAN TRỌNG: Cài đặt Pods tường minh để tạo file .xcworkspace
+      - name: Install CocoaPods Dependencies
+        run: |
+          cd ios/App
+          pod install
+
       - name: Build Xcode Project
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace \
