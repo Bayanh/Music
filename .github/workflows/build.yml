@@ -1,11 +1,12 @@
 name: Build iOS IPA
-on: [push]
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -15,26 +16,29 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          npm install @capacitor/cli @capacitor/core @capacitor/ios
-
-      - name: Initialize Capacitor
-        run: |
           npx cap add ios
-          npx cap copy ios
 
+      - name: Sync Web Code
+        run: npx cap sync ios
+        
       - name: Build Xcode Project
         run: |
-          cd ios/App
-          xcodebuild -project App.xcodeproj -scheme App -configuration Debug -sdk iphoneos -allowProvisioningUpdates build CODE_SIGNING_ALLOWED=NO
+          xcodebuild -workspace ios/App/App.xcworkspace \
+                     -scheme App \
+                     -configuration Debug \
+                     -sdk iphoneos \
+                     -derivedDataPath build \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO
 
-      - name: Create IPA (Unsigned)
+      - name: Create IPA
         run: |
           mkdir -p Payload
-          mv ios/App/build/Debug-iphoneos/App.app Payload/
-          zip -r App-unsigned.ipa Payload
+          cp -R build/Build/Products/Debug-iphoneos/*.app Payload/
+          zip -r MyWebApp.ipa Payload
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: web-app-ipa
-          path: App-unsigned.ipa
+          name: My-Signed-IPA
+          path: MyWebApp.ipa
