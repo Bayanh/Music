@@ -16,28 +16,23 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # BƯỚC ĐÃ SỬA: Bỏ "npm run build" vì bạn dùng HTML thuần.
-      # Chỉ cần đảm bảo thư mục chứa code web của bạn (ví dụ: 'www' hoặc 'dist') đã sẵn sàng.
       - name: Prepare Web Assets
         run: |
-          # Nếu thư mục output của bạn chưa có, Capacitor sẽ báo lỗi.
-          # Lệnh này đảm bảo thư mục luôn tồn tại.
+          # Đảm bảo thư mục web tồn tại để Capacitor không báo lỗi
           mkdir -p www 
 
       - name: Add iOS Platform
-        run: npx cap add ios || true # Thêm "|| true" để không bị lỗi nếu platform đã tồn tại
+        run: npx cap add ios || true
 
       - name: Sync Web Code
         run: npx cap sync ios
         
-      - name: Install CocoaPods Dependencies
-        run: |
-          cd ios/App
-          pod install
+      # ĐÃ XÓA bước "Install CocoaPods Dependencies"
 
       - name: Build Xcode Project
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          # SỬA: Đổi từ -workspace sang -project vì SPM không dùng workspace
+          xcodebuild -project ios/App/App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -sdk iphoneos \
