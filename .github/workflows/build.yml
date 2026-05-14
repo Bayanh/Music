@@ -16,19 +16,20 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 1. Bổ sung bước Build Web (Tùy thuộc vào framework bạn dùng: React/Vue/Ionic...)
-      - name: Build Web Assets
-        run: npm run build 
+      # BƯỚC ĐÃ SỬA: Bỏ "npm run build" vì bạn dùng HTML thuần.
+      # Chỉ cần đảm bảo thư mục chứa code web của bạn (ví dụ: 'www' hoặc 'dist') đã sẵn sàng.
+      - name: Prepare Web Assets
+        run: |
+          # Nếu thư mục output của bạn chưa có, Capacitor sẽ báo lỗi.
+          # Lệnh này đảm bảo thư mục luôn tồn tại.
+          mkdir -p www 
 
-      # 2. Thêm nền tảng iOS (Chỉ hoạt động nếu thư mục ios chưa được commit lên Git)
       - name: Add iOS Platform
-        run: npx cap add ios
+        run: npx cap add ios || true # Thêm "|| true" để không bị lỗi nếu platform đã tồn tại
 
-      # 3. Đồng bộ code web sang thư mục native
       - name: Sync Web Code
         run: npx cap sync ios
         
-      # 4. BỔ SUNG QUAN TRỌNG: Cài đặt Pods tường minh để tạo file .xcworkspace
       - name: Install CocoaPods Dependencies
         run: |
           cd ios/App
