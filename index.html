@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Media Manager Pro</title>
+    <style>
+        :root {
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --primary: #fa243c; 
+            --text-main: #1c1c1e;
+            --text-muted: #8e8e93;
+            --border-color: #e5e5ea;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0; padding: 0;
+            padding-bottom: 160px; 
+        }
+
+        header { background-color: var(--card-bg); padding: 15px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        header h1 { margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
+
+        /* Tab Switcher trong Trang chủ */
+        .sub-nav { display: flex; background: #e5e5ea; border-radius: 8px; padding: 2px; margin-bottom: 5px; }
+        .sub-nav button { flex: 1; border: none; padding: 8px; border-radius: 6px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted); }
+        .sub-nav button.active { background: #fff; color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        .container { padding: 15px; display: none; }
+        .container.active { display: block; }
+
+        /* Danh sách tệp */
+        .list-container { background-color: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .list-item { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .list-item.playing { background-color: #fff0f2; }
+
+        .media-art { width: 50px; height: 50px; background-color: #e5e5ea; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; background-size: cover; background-position: center; flex-shrink: 0; overflow: hidden; }
+        .item-info { flex: 1; overflow: hidden; }
+        .item-info h4 { margin: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .btn-icon { font-size: 18px; padding: 5px; }
+
+        /* Player UI */
+        .player-wrapper { position: fixed; bottom: 85px; left: 10px; right: 10px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); border-radius: 20px; padding: 12px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 99; display: none; }
+        #video-screen { width: 100%; border-radius: 12px; background: #000; margin-bottom: 10px; display: none; max-height: 180px; }
+        
+        .player-controls { display: flex; align-items: center; gap: 12px; }
+        .player-text { flex: 1; overflow: hidden; }
+        .player-text h4 { margin: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .seek-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+        .seek-bar { flex: 1; height: 4px; accent-color: var(--primary); cursor: pointer; }
+        .time { font-size: 10px; color: var(--text-muted); min-width: 30px; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; padding: 10px 0 25px; border-top: 1px solid var(--border-color); z-index: 98; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-muted); font-size: 11px; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Trang chủ</h1>
+        <div class="sub-nav" id="home-tabs">
+            <button class="active" onclick="switchSubTab('audio')">Âm thanh</button>
+            <button onclick="switchSubTab('video')">Video</button>
+        </div>
+    </header>
+
+    <!-- TRANG CHỦ -->
+    <div id="tab-home" class="container active">
+        <div id="list-audio" class="list-container"></div>
+        <div id="list-video" class="list-container" style="display: none;"></div>
+    </div>
+
+    <!-- THÊM TỆP -->
+    <div id="tab-add" class="container">
+        <div style="background:#fff; border-radius:16px; padding:40px 20px; text-align:center;">
+            <div style="font-size:50px; margin-bottom:15px;">📥</div>
+            <h3>Tải tệp lên</h3>
+            <p style="color:var(--text-muted); font-size:14px;">Chọn Nhạc hoặc Video để lưu vào máy</p>
+            <button onclick="document.getElementById('file-upload').click()" style="background:var(--primary); color:#fff; border:none; padding:12px 24px; border-radius:12px; font-weight:600; margin-top:15px;">Chọn tệp</button>
+            <input type="file" id="file-upload" accept="audio/*,video/*" style="display: none;">
+        </div>
+    </div>
+
+    <input type="file" id="cover-upload" accept="image/*" style="display: none;">
+
+    <!-- PLAYER -->
+    <div class="player-wrapper" id="main-player">
+        <video id="media-engine" playsinline style="width:100%;"></video>
+        <div class="player-controls">
+            <div class="media-art" id="p-art">🎵</div>
+            <div class="player-text">
+                <h4 id="p-title">Đang phát...</h4>
+                <div class="seek-row">
+                    <span class="time" id="t-cur">0:00</span>
+                    <input type="range" id="p-seek" class="seek-bar" value="0">
+                    <span class="time" id="t-total">0:00</span>
+                </div>
+            </div>
+            <div style="font-size:30px; color:var(--primary);" onclick="togglePlay()" id="p-play">⏸️</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" id="n-home" onclick="switchMainTab('home')"><span class="nav-icon">🏠</span>Trang chủ</div>
+        <div class="nav-item" id="n-add" onclick="switchMainTab('add')"><span class="nav-icon">➕</span>Thêm tệp</div>
+    </div>
+
+    <script>
+        let db;
+        let currentList = 'audio';
+        let allMedia = [];
+        const engine = document.getElementById('media-engine');
+        const pSeek = document.getElementById('p-seek');
+
+        // Khởi tạo Database
+        const req = indexedDB.open("ProMediaDB", 1);
+        req.onupgradeneeded = (e) => {
+            db = e.target.result;
+            db.createObjectStore("files", { keyPath: "id", autoIncrement: true });
+        };
+        req.onsuccess = (e) => { db = e.target.result; render(); };
+
+        // Chuyển Tab Chính (Trang chủ / Thêm)
+        function switchMainTab(t) {
+            document.getElementById('tab-home').classList.toggle('active', t === 'home');
+            document.getElementById('tab-add').classList.toggle('active', t === 'add');
+            document.getElementById('n-home').classList.toggle('active', t === 'home');
+            document.getElementById('n-add').classList.toggle('active', t === 'add');
+            document.getElementById('home-tabs').style.display = t === 'home' ? 'flex' : 'none';
+        }
+
+        // Chuyển Tab Phụ (Âm thanh / Video)
+        function switchSubTab(type) {
+            currentList = type;
+            document.querySelectorAll('#home-tabs button').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('list-audio').style.display = type === 'audio' ? 'block' : 'none';
+            document.getElementById('list-video').style.display = type === 'video' ? 'block' : 'none';
+            render();
+        }
+
+        // Xử lý File tải lên
+        document.getElementById('file-upload').onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const type = file.type.startsWith('video') ? 'video' : 'audio';
+            const tx = db.transaction("files", "readwrite");
+            tx.objectStore("files").add({ name: file.name, data: file, type: type, cover: null });
+            tx.oncomplete = () => { render(); switchMainTab('home'); };
+        };
+
+        // Hiển thị danh sách
+        function render() {
+            const tx = db.transaction("files", "readonly");
+            tx.objectStore("files").getAll().onsuccess = (e) => {
+                allMedia = e.target.result.reverse();
+                const container = document.getElementById(currentList === 'audio' ? 'list-audio' : 'list-video');
+                container.innerHTML = '';
+                
+                const filtered = allMedia.filter(m => m.type === currentList);
+                if (!filtered.length) container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">Trống</p>';
+
+                filtered.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    let artContent = m.type === 'audio' ? '🎵' : '🎬';
+                    let artStyle = '';
+                    if (m.cover) {
+                        artContent = '';
+                        artStyle = `background-image:url('${URL.createObjectURL(m.cover)}')`;
+                    }
+
+                    div.innerHTML = `
+                        <div class="media-art" style="${artStyle}">${artContent}</div>
+                        <div class="item-info"><h4>${m.name}</h4><p>${m.type === 'audio' ? 'Music' : 'Video'}</p></div>
+                        <div class="action-btns">
+                            ${m.type === 'audio' ? `<div class="btn-icon" onclick="changeCover(${m.id}, event)">🖼️</div>` : ''}
+                            <div class="btn-icon" style="color:red;" onclick="removeFile(${m.id}, event)">🗑️</div>
+                        </div>
+                    `;
+                    div.onclick = () => play(m);
+                    container.appendChild(div);
+                });
+            };
+        }
+
+        // Phát nhạc/Video
+        function play(m) {
+            engine.src = URL.createObjectURL(m.data);
+            engine.style.display = m.type === 'video' ? 'block' : 'none';
+            document.getElementById('main-player').style.display = 'block';
+            document.getElementById('p-title').innerText = m.name;
+            
+            const pArt = document.getElementById('p-art');
+            if (m.cover) {
+                pArt.style.backgroundImage = `url('${URL.createObjectURL(m.cover)}')`;
+                pArt.innerText = '';
+            } else {
+                pArt.style.backgroundImage = 'none';
+                pArt.innerText = m.type === 'audio' ? '🎵' : '🎬';
+            }
+            
+            engine.play();
+            document.getElementById('p-play').innerText = '⏸️';
+        }
+
+        function togglePlay() {
+            if (engine.paused) { engine.play(); document.getElementById('p-play').innerText = '⏸️'; }
+            else { engine.pause(); document.getElementById('p-play').innerText = '▶️'; }
+        }
+
+        // Đổi ảnh bìa
+        let targetId = null;
+        function changeCover(id, e) {
+            e.stopPropagation();
+            targetId = id;
+            document.getElementById('cover-upload').click();
+        }
+
+        document.getElementById('cover-upload').onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file || !targetId) return;
+            const tx = db.transaction("files", "readwrite");
+            const store = tx.objectStore("files");
+            store.get(targetId).onsuccess = (ev) => {
+                const item = ev.target.result;
+                item.cover = file;
+                store.put(item).onsuccess = render;
+            };
+        };
+
+        function removeFile(id, e) {
+            e.stopPropagation();
+            if (confirm("Xóa tệp này?")) {
+                db.transaction("files", "readwrite").objectStore("files").delete(id).onsuccess = render;
+            }
+        }
+
+        // Seekbar & Auto-next
+        engine.ontimeupdate = () => {
+            pSeek.value = (engine.currentTime / engine.duration) * 100 || 0;
+            document.getElementById('t-cur').innerText = fmtTime(engine.currentTime);
+            document.getElementById('t-total').innerText = fmtTime(engine.duration);
+        };
+        pSeek.oninput = () => engine.currentTime = (pSeek.value / 100) * engine.duration;
+        
+        engine.onended = () => {
+            const filtered = allMedia.filter(m => m.type === currentList);
+            const curIdx = filtered.findIndex(m => m.name === document.getElementById('p-title').innerText);
+            if (curIdx > -1 && curIdx < filtered.length - 1) play(filtered[curIdx + 1]);
+            else if (filtered.length > 0) play(filtered[0]);
+        };
+
+        function fmtTime(s) {
+            if (isNaN(s)) return "0:00";
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec < 10 ? '0' + sec : sec}`;
+        }
+    </script>
+</body>
+</html>
